@@ -18,7 +18,7 @@ import qualified Data.Map as Map (
 import System.FilePath (
     (</>))
 import System.Directory (
-    createDirectoryIfMissing,doesFileExist,getDirectoryContents)
+    createDirectoryIfMissing,doesFileExist,getDirectoryContents,createFileLink)
 import Control.Monad (
     filterM,forM,forM_)
 
@@ -47,10 +47,15 @@ writeSymbols path symbols =
 
 persistEnvironment :: Environment -> IO ()
 persistEnvironment environment = do
+    createDirectoryIfMissing True localEnvironmentPath
     createDirectoryIfMissing True environmentPath
-    forM_ (Map.toList environment) (\(modulname,symbols) -> do
+    forM_ (Map.toList environment) $ \(modulname,symbols) -> do
         let modulpath = environmentPath </> prettyPrint modulname
-        writeSymbols modulpath symbols)
+        writeSymbols modulpath symbols
+        createFileLink modulpath (localEnvironmentPath </> prettyPrint modulname)
+
+localEnvironmentPath :: FilePath
+localEnvironmentPath = "environment"
 
 environmentPath :: FilePath
 environmentPath = "fragnix" </> "environment"
@@ -60,7 +65,9 @@ builtinEnvironmentPath = "fragnix" </> "builtin_environment"
 
 persistBuiltinEnvironment :: Environment -> IO ()
 persistBuiltinEnvironment environment = do
+    createDirectoryIfMissing True localEnvironmentPath
     createDirectoryIfMissing True builtinEnvironmentPath
-    forM_ (Map.toList environment) (\(modulname,symbols) -> do
+    forM_ (Map.toList environment) $ \(modulname,symbols) -> do
         let modulpath = builtinEnvironmentPath </> prettyPrint modulname
-        writeSymbols modulpath symbols)
+        writeSymbols modulpath symbols
+        createFileLink modulpath (localEnvironmentPath </> prettyPrint modulname)
