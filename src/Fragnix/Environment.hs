@@ -1,8 +1,7 @@
 module Fragnix.Environment
  ( loadEnvironment
- , environmentPath
- , builtinEnvironmentPath
  , persistEnvironment
+ , persistBuiltinEnvironment
  ) where
 
 import Language.Haskell.Names (Symbol)
@@ -15,7 +14,7 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy as BS (readFile, writeFile, pack)
 import Data.Char (ord)
 import qualified Data.Map as Map (
-    fromList,toList)
+    fromList,toList,union)
 import System.FilePath (
     (</>))
 import System.Directory (
@@ -24,8 +23,8 @@ import Control.Monad (
     filterM,forM,forM_)
 
 
-loadEnvironment :: FilePath -> IO Environment
-loadEnvironment path = do
+loadEnvironment' :: FilePath -> IO Environment
+loadEnvironment' path = do
     createDirectoryIfMissing True path
     filenames <- getDirectoryContents path
     let pathmodulnames = map (\filename -> (ModuleName () filename,path </> filename)) filenames
@@ -34,17 +33,23 @@ loadEnvironment path = do
         symbols <- readSymbols modulpath
         return (modulname,symbols)))
 
+loadEnvironment :: IO Environment
+loadEnvironment = do
+  builtinEnvironment <- loadEnvironment' builtinEnvironmentPath
+  userEnvironment <- loadEnvironment' environmentPath
+  return (Map.union builtinEnvironment userEnvironment)
+
 -- Replaces "writeSymbols" from haskell-names. Uses encodePretty instead.
 writeSymbols :: FilePath -> [Symbol] -> IO ()
 writeSymbols path symbols =
   BS.writeFile path $
     encodePretty symbols `mappend` BS.pack [fromIntegral $ ord '\n']
 
-persistEnvironment :: FilePath -> Environment -> IO ()
-persistEnvironment path environment = do
-    createDirectoryIfMissing True path
+persistEnvironment :: Environment -> IO ()
+persistEnvironment environment = do
+    createDirectoryIfMissing True environmentPath
     forM_ (Map.toList environment) (\(modulname,symbols) -> do
-        let modulpath = path </> prettyPrint modulname
+        let modulpath = environmentPath </> prettyPrint modulname
         writeSymbols modulpath symbols)
 
 environmentPath :: FilePath
@@ -52,3 +57,10 @@ environmentPath = "fragnix" </> "environment"
 
 builtinEnvironmentPath :: FilePath
 builtinEnvironmentPath = "fragnix" </> "builtin_environment"
+
+persistBuiltinEnvironment :: Environment -> IO ()
+persistBuiltinEnvironment environment = do
+    createDirectoryIfMissing True builtinEnvironmentPath
+    forM_ (Map.toList environment) (\(modulname,symbols) -> do
+        let modulpath = builtinEnvironmentPath </> prettyPrint modulname
+        writeSymbols modulpath symbols)

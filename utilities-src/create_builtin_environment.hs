@@ -1,7 +1,7 @@
 module Main where
 
 import Fragnix.Environment (
-  persistEnvironment)
+  persistBuiltinEnvironment)
 
 import Language.Haskell.Exts (
     Module,parseFileContentsWithMode,defaultParseMode,ParseMode(..),baseFixities,
@@ -52,7 +52,7 @@ main = do
   let builtinEnvironment = resolve (baseModules ++ ghcPrimModules ++ integerGmpModules) Map.empty
       patchedBuiltinEnvironment = patchBuiltinEnvironment builtinEnvironment
 
-  persistEnvironment "fragnix/new_builtin_environment" patchedBuiltinEnvironment
+  persistBuiltinEnvironment patchedBuiltinEnvironment
 
 
 parse :: FilePath -> IO (Module SrcSpan)

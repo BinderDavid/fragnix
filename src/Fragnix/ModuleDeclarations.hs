@@ -7,8 +7,7 @@ module Fragnix.ModuleDeclarations
 
 import Fragnix.Declaration (
     Declaration(Declaration),Genre(..))
-import Fragnix.Environment (
-    loadEnvironment,environmentPath,builtinEnvironmentPath)
+import Fragnix.Environment ( loadEnvironment )
 
 import Language.Haskell.Exts (
     Module,ModuleName,QName(Qual,UnQual),Decl(..),
@@ -30,7 +29,7 @@ import qualified Language.Haskell.Names.GlobalSymbolTable as GlobalTable (
 
 
 import qualified Data.Map.Strict as Map (
-    union,(!),fromList)
+    (!),fromList)
 import Control.Monad (forM)
 import Data.Maybe (mapMaybe)
 import Data.Text (pack)
@@ -40,10 +39,9 @@ import Data.Foldable (toList)
 -- declarations in those modules. The default environment loaded and used.
 moduleDeclarations :: [FilePath] -> IO [Declaration]
 moduleDeclarations modulepaths = do
-    builtinEnvironment <- loadEnvironment builtinEnvironmentPath
-    environment <- loadEnvironment environmentPath
+    environment <- loadEnvironment
     modules <- forM modulepaths parse
-    return (moduleDeclarationsWithEnvironment (Map.union builtinEnvironment environment) modules)
+    return (moduleDeclarationsWithEnvironment environment modules)
 
 
 -- | Use the given environment to produce a list of all declarations from the given list

@@ -5,8 +5,8 @@ import Fragnix.Declaration (
 import Fragnix.Slice (
     writeSlice)
 import Fragnix.Environment (
-    loadEnvironment,persistEnvironment,
-    environmentPath,builtinEnvironmentPath)
+    loadEnvironment,persistEnvironment )
+
 import Fragnix.SliceSymbols (
     updateEnvironment,findMainSliceIDs)
 import Fragnix.ModuleDeclarations (
@@ -38,10 +38,7 @@ build :: [FilePath] -> IO ()
 build modulePaths = do
     putStrLn "Loading environment ..."
 
-    environment <- timeIt (do
-        builtinEnvironment <- loadEnvironment builtinEnvironmentPath
-        userEnvironment <- loadEnvironment environmentPath
-        return (Map.union builtinEnvironment userEnvironment))
+    environment <- timeIt loadEnvironment
 
     putStrLn "Parsing modules ..."
 
@@ -65,7 +62,7 @@ build modulePaths = do
     putStrLn "Updating environment ..."
 
     let updatedEnvironment = updateEnvironment symbolSliceIDs (moduleSymbols environment modules)
-    timeIt (persistEnvironment environmentPath updatedEnvironment)
+    timeIt (persistEnvironment updatedEnvironment)
 
     case findMainSliceIDs symbolSliceIDs of
         [] -> putStrLn "No main symbol in modules."
